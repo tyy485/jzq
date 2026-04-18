@@ -112,9 +112,10 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
 
 <script>
 // ==============================================
-// 【真·房间联机】必须两人都在线才进游戏，绝不骗人
+// 公共 WSS 联机：wss://echo.websocket.events
 // ==============================================
-const rooms = new Map();
+const socket = new WebSocket('wss://echo.websocket.events');
+
 const title = document.querySelector('.title');
 const startBtn = document.querySelector('.start-btn');
 const modeBox = document.querySelector('.mode-box');
@@ -161,6 +162,49 @@ let myMark = '🔵';
 let peerMark = '🔴';
 let roomAction = '';
 let peerConnected = false;
+
+// 连接状态
+socket.onopen = () => {
+  console.log('WebSocket 已连接');
+};
+
+socket.onclose = () => {
+  showTip('提示', '服务器连接已断开');
+};
+
+socket.onerror = () => {
+  showTip('错误', '服务器连接失败');
+};
+
+// 接收对方消息
+socket.onmessage = (evt) => {
+  try {
+    const data = JSON.parse(evt.data);
+    if (data.room !== roomId) return;
+
+    if (data.type === 'join') {
+      peerConnected = true;
+      showTip('成功', '玩家已加入');
+      setTimeout(startRealGame, 1000);
+    }
+    else if (data.type === 'move') {
+      const cell = cells[data.index];
+      if (!cell.textContent) {
+        cell.textContent = data.mark;
+        current = data.next;
+        status.textContent = current === '🔵' ? '蓝方回合' : '红方回合';
+        checkGame();
+      }
+    }
+  } catch (e) {}
+};
+
+// 发送消息
+function send(data) {
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(data));
+  }
+}
 
 for (let i=0;i<9;i++){
   const c = document.createElement('div');
@@ -219,33 +263,15 @@ document.querySelector('.confirm-room').onclick = () => {
 
   if (roomAction === 'create') {
     isHost = true;
-    rooms.set(roomId, { host: true, peer: false });
     showTip('房间 '+roomId,'等待玩家加入...');
   } else {
     isHost = false;
-    if (!rooms.has(roomId)) {
-      showTip('失败','房间不存在或房主不在线');
-      return;
-    }
-    rooms.get(roomId).peer = true;
-    peerConnected = true;
-    showTip('成功','已加入房间 '+roomId);
-    setTimeout(startRealGame, 1000);
+    send({ type: 'join', room: roomId });
+    showTip('已发送请求','等待房主响应');
   }
 }
 
-// ==============================================
-// 【关键】只有对方真的连接，才会进入游戏！
-// ==============================================
 function startRealGame() {
-  if (isHost) {
-    const room = rooms.get(roomId);
-    if (!room.peer) {
-      showTip('等待','玩家正在加入...');
-      return;
-    }
-  }
-
   tipModal.classList.remove('show');
   gameMode = 'cloud';
   cloudBox.classList.remove('show');
@@ -288,10 +314,6 @@ function clickCell(e){
   if (cell.textContent || gameOver) return;
 
   if (gameMode === 'cloud') {
-    if (!peerConnected && !isHost) {
-      showTip('错误','未连接到房间');
-      return;
-    }
     if (current !== myMark) {
       showTip('提示','请等待对方回合');
       return;
@@ -299,7 +321,19 @@ function clickCell(e){
   }
 
   cell.textContent = current;
-  current = current === '🔵' ? '🔴' : '🔵';
+  const next = current === '🔵' ? '🔴' : '🔵';
+
+  if (gameMode === 'cloud') {
+    send({
+      type: 'move',
+      room: roomId,
+      index: idx,
+      mark: current,
+      next: next
+    });
+  }
+
+  current = next;
   status.textContent = current === '🔵' ? '蓝方回合' : '红方回合';
   checkGame();
   if (gameOver) return;
