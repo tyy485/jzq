@@ -63,12 +63,6 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
   background:#4285F4;color:white;cursor:pointer
 }
 .room-modal .close{background:#999}
-
-#p2pStatus{
-  position:absolute;bottom:20px;font-size:14px;color:#666;
-  text-align:center;display:none
-}
-#p2pStatus.show{display:block}
 </style>
 </head>
 <body>
@@ -110,8 +104,6 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
       <button class="close">取消</button>
     </div>
   </div>
-
-  <div id="p2pStatus"></div>
 </div>
 
 <script>
@@ -146,7 +138,6 @@ const roomInput = document.getElementById('roomInput');
 const createRoomBtn = document.getElementById('createRoom');
 const joinRoomBtn = document.getElementById('joinRoom');
 const closeRoomBtn = document.querySelector('.room-modal .close');
-const p2pStatus = document.getElementById('p2pStatus');
 
 const winPatterns = [
   [0,1,2],[3,4,5],[6,7,8],
@@ -160,19 +151,16 @@ let currentPlayer = '🔵';
 let gameOver = false;
 let isAI = false;
 let aiLevel = '';
-let gameMode = ''; // pvp / ai / online
+let gameMode = '';
 let hellMode = false;
 let hardWinStreak = 0;
 
-// 联机核心（模拟中心服务器）
+// 联机核心（BroadcastChannel）
 let isOnline = false;
-let isHost = false;
 let roomId = '';
-let mySymbol = ''; // 🔵 / 🔴
-let networkOnline = navigator.onLine;
-
-// 全局房间数据库（前端内存模拟服务器）
-const serverRooms = new Map();
+let mySymbol = '';
+let channel = null;
+let roomMembers = 0;
 
 // ====================== 棋盘初始化 ======================
 for (let i=0;i<9;i++){
@@ -184,121 +172,50 @@ for (let i=0;i<9;i++){
   cells.push(c);
 }
 
-// ====================== 网络监听 ======================
-window.addEventListener('online', () => {
-  networkOnline = true;
-  p2pStatus.textContent = "已联网 → 中心服务器模式";
-});
-window.addEventListener('offline', () => {
-  networkOnline = false;
-  p2pStatus.textContent = "无网络 → P2P本地模式";
-});
-
-// ====================== 点击格子（含联机校验） ======================
-function clickCell(e){
-  const cell = e.target;
-  const idx = Number(cell.dataset.index);
-
-  // 愚人节延迟
-  if (isAprilFool && Math.random() < 0.3) {
-    setTimeout(() => {
-      handlePlace(idx);
-    }, 600 + Math.random() * 800);
-    return;
-  }
-  handlePlace(idx);
+// ====================== 跨标签页通信 ======================
+function connectChannel(room) {
+  if (channel) channel.close();
+  channel = new BroadcastChannel(`tic_tac_room_${room}`);
+  channel.onmessage = (e) => {
+    const { type, data } = e.data;
+    if (type === 'MOVE') {
+      cells[data.index].textContent = data.player;
+      currentPlayer = data.nextPlayer;
+      updateStatus();
+      checkGame();
+    }
+    if (type === 'JOIN') {
+      roomMembers = data.count;
+      status.textContent = `房间 ${roomId} - ${roomMembers}/2 人`;
+      if (roomMembers === 2) startOnlineGame();
+    }
+  };
 }
 
-function handlePlace(index) {
-  const cell = cells[index];
-  if (cell.textContent || gameOver) return;
-
-  // 联机：只能下自己的颜色
-  if (isOnline && mySymbol !== currentPlayer) {
-    status.textContent = `等待${currentPlayer}落子`;
-    return;
-  }
-
-  // 本地/联机：落子
-  cell.textContent = currentPlayer;
-
-  // 联机：发给服务器
-  if (isOnline) {
-    serverEmit('move', { index, player: currentPlayer });
-  }
-
-  nextTurn();
-  checkGame();
-}
-
-// 切换回合
-function nextTurn() {
-  currentPlayer = currentPlayer === '🔵' ? '🔴' : '🔵';
-  status.textContent = isOnline
-    ? `当前：${currentPlayer}（你：${mySymbol}）`
-    : `${currentPlayer}回合`;
-}
-
-// ====================== 模拟服务器：消息收发 ======================
-function serverEmit(type, data) {
-  if (!networkOnline) {
-    alert("无网络，无法联机");
-    return;
-  }
-  // 广播给同房间
-  const room = serverRooms.get(roomId);
-  if (!room) return;
-
-  if (type === 'move') {
-    // 服务器更新棋盘
-    room.board[data.index] = data.player;
-    room.currentPlayer = data.player === '🔵' ? '🔴' : '🔵';
-    // 推送给所有客户端
-    room.clients.forEach(client => {
-      client.onServerMessage({ type, data: room });
-    });
+function sendMessage(type, data) {
+  if (channel) {
+    channel.postMessage({ type, data });
   }
 }
 
-// 客户端接收服务器消息
-function onServerMessage(msg) {
-  if (msg.type === 'move') {
-    const room = msg.data;
-    // 刷新棋盘
-    room.board.forEach((val, i) => {
-      cells[i].textContent = val;
-    });
-    currentPlayer = room.currentPlayer;
-    status.textContent = `当前：${currentPlayer}（你：${mySymbol}）`;
-    checkGame();
-  }
-}
+// ====================== 房间操作 ======================
+onlineBtn.onclick = () => {
+  gameMode = 'online';
+  isAI = false;
+  isOnline = true;
+  modeBox.classList.remove('show');
+  roomModal.classList.add('show');
+};
 
-// ====================== 房间创建/加入 ======================
 createRoomBtn.onclick = () => {
   roomId = roomInput.value.trim();
-  if (!/^\d{6}$/.test(roomId)) {
-    alert("请输入6位数字房间号");
-    return;
-  }
-  if (serverRooms.has(roomId)) {
-    alert("房间已存在");
-    return;
-  }
-
-  // 创建房间（服务器逻辑）
-  serverRooms.set(roomId, {
-    board: Array(9).fill(''),
-    currentPlayer: Math.random() < 0.5 ? '🔵' : '🔴',
-    clients: [this],
-    host: this
-  });
-
-  isHost = true;
-  isOnline = true;
+  if (!/^\d{6}$/.test(roomId)) return alert("6位数字房间号");
+  roomMembers = 1;
   mySymbol = '🔵';
+  connectChannel(roomId);
+  sendMessage('JOIN', { count: roomMembers });
   roomModal.classList.remove('show');
-  status.textContent = `房间 ${roomId} - 等待对手加入（你：${mySymbol}）`;
+  status.textContent = `房间 ${roomId} - 等待对手（1/2）`;
   status.classList.add('show');
   board.classList.add('show');
   resetBoard();
@@ -306,41 +223,66 @@ createRoomBtn.onclick = () => {
 
 joinRoomBtn.onclick = () => {
   roomId = roomInput.value.trim();
-  if (!/^\d{6}$/.test(roomId)) {
-    alert("请输入6位数字房间号");
-    return;
-  }
-  const room = serverRooms.get(roomId);
-  if (!room) {
-    alert("房间不存在");
-    return;
-  }
-  if (room.clients.length >= 2) {
-    alert("房间已满");
-    return;
-  }
-
-  // 加入房间
-  room.clients.push(this);
-  isHost = false;
-  isOnline = true;
+  if (!/^\d{6}$/.test(roomId)) return alert("6位数字房间号");
+  roomMembers = 2;
   mySymbol = '🔴';
+  connectChannel(roomId);
+  sendMessage('JOIN', { count: roomMembers });
   roomModal.classList.remove('show');
-  status.textContent = `房间 ${roomId} - 已加入（你：${mySymbol}）`;
+  status.textContent = `房间 ${roomId} - 已加入（2/2）`;
   status.classList.add('show');
   board.classList.add('show');
   resetBoard();
-
-  // 同步初始状态
-  currentPlayer = room.currentPlayer;
-  room.board.forEach((val, i) => { cells[i].textContent = val; });
-  status.textContent = `当前：${currentPlayer}（你：${mySymbol}）`;
+  startOnlineGame();
 };
 
-// ====================== 游戏逻辑 ======================
-function randomFirstPlayer() {
+function startOnlineGame() {
   currentPlayer = Math.random() < 0.5 ? '🔵' : '🔴';
-  status.textContent = `${currentPlayer}回合`;
+  updateStatus();
+}
+
+// ====================== 游戏核心 ======================
+function clickCell(e){
+  const idx = +e.target.dataset.index;
+  if (cells[idx].textContent || gameOver) return;
+
+  // 联机：只能下自己颜色
+  if (isOnline && currentPlayer !== mySymbol) {
+    status.textContent = `等待 ${currentPlayer} 落子`;
+    return;
+  }
+
+  // 愚人节延迟
+  if (isAprilFool && Math.random() < 0.3) {
+    setTimeout(() => placeMove(idx), 600 + Math.random()*800);
+  } else {
+    placeMove(idx);
+  }
+}
+
+function placeMove(index) {
+  cells[index].textContent = currentPlayer;
+  if (isOnline) {
+    sendMessage('MOVE', {
+      index,
+      player: currentPlayer,
+      nextPlayer: currentPlayer === '🔵' ? '🔴' : '🔵'
+    });
+  }
+  currentPlayer = currentPlayer === '🔵' ? '🔴' : '🔵';
+  updateStatus();
+  checkGame();
+
+  // AI回合
+  if (isAI && currentPlayer === '🔴' && !gameOver) {
+    setTimeout(aiMove, 300);
+  }
+}
+
+function updateStatus() {
+  status.textContent = isOnline
+    ? `当前：${currentPlayer} | 你：${mySymbol}`
+    : `${currentPlayer} 回合`;
 }
 
 function checkGame() {
@@ -365,40 +307,30 @@ function checkGame() {
   }
 }
 
+// ====================== AI逻辑 ======================
 function aiMove() {
   const empty = cells.filter(c => !c.textContent);
   if (!empty.length || gameOver) return;
   let best = findWin('🔴') || findWin('🔵') || (cells[4].textContent ? empty[0] : cells[4]);
   best.textContent = '🔴';
   checkGame();
-  if (gameOver) return;
-  currentPlayer = '🔵';
-  status.textContent = '蓝方回合';
+  if (!gameOver) {
+    currentPlayer = '🔵';
+    updateStatus();
+  }
 }
 
 function findWin(m) {
   for (const p of winPatterns) {
     const [a,b,c] = p;
-    if (cells[a].textContent === m && cells[b].textContent === m && !cells[c].textContent) return cells[c];
-    if (cells[a].textContent === m && cells[c].textContent === m && !cells[b].textContent) return cells[b];
-    if (cells[b].textContent === m && cells[c].textContent === m && !cells[a].textContent) return cells[a];
+    if (cells[a].textContent===m && cells[b].textContent===m && !cells[c].textContent) return cells[c];
+    if (cells[a].textContent===m && cells[c].textContent===m && !cells[b].textContent) return cells[b];
+    if (cells[b].textContent===m && cells[c].textContent===m && !cells[a].textContent) return cells[a];
   }
   return null;
 }
 
-function resetBoard() {
-  cells.forEach(c => c.textContent = '');
-  gameOver = false;
-  if (gameMode === 'pvp') {
-    randomFirstPlayer();
-  } else {
-    currentPlayer = '🔵';
-  }
-  endModal.classList.remove('show');
-  status.textContent = `${currentPlayer}回合`;
-}
-
-// ====================== 菜单按钮 ======================
+// ====================== 菜单与重置 ======================
 startBtn.onclick = () => {
   title.classList.add('move-up');
   startBtn.classList.add('move-down');
@@ -411,7 +343,8 @@ pvpBtn.onclick = () => {
   isOnline = false;
   modeBox.classList.remove('show');
   resetBoard();
-  randomFirstPlayer();
+  currentPlayer = Math.random() < 0.5 ? '🔵' : '🔴';
+  updateStatus();
   status.classList.add('show');
   board.classList.add('show');
 };
@@ -430,14 +363,14 @@ difBtns.forEach(btn => {
     }
     isAI = true;
     aiLevel = dif;
-    hellMode = (dif === 'hell');
+    hellMode = dif === 'hell';
     difficultyBox.classList.remove('show');
     resetBoard();
     status.classList.add('show');
     board.classList.add('show');
     if (dif === 'hard' || dif === 'hell') {
       currentPlayer = '🔴';
-      status.textContent = 'AI先手';
+      updateStatus();
       setTimeout(() => {
         aiMove();
         if (hellMode) setTimeout(aiMove, 300);
@@ -446,8 +379,16 @@ difBtns.forEach(btn => {
   }
 });
 
+function resetBoard() {
+  cells.forEach(c => c.textContent = '');
+  gameOver = false;
+  endModal.classList.remove('show');
+  if (!isOnline) currentPlayer = '🔵';
+}
+
 btnRestart.onclick = () => {
-  if (gameMode === 'pvp' || isAI) resetBoard();
+  if (!isOnline) resetBoard();
+  else alert("联机中请返回菜单重开");
 };
 
 btnMenu.onclick = () => {
@@ -457,8 +398,9 @@ btnMenu.onclick = () => {
   modeBox.classList.remove('show','move-down');
   difficultyBox.classList.remove('show');
   roomModal.classList.remove('show');
+  if (channel) channel.close();
   isOnline = false;
-  serverRooms.delete(roomId);
+  roomMembers = 0;
   setTimeout(() => {
     title.classList.remove('move-up');
     startBtn.classList.remove('move-down');
