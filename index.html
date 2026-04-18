@@ -9,38 +9,34 @@
 html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content:center;align-items:center}
 .container{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
 
-.title{font-size:clamp(32px,8vw,60px);font-weight:bold;color:#222;position:absolute;top:50%;transform:translateY(-50%);transition:all 1s ease;z-index:1}
+.title{font-size:clamp(32px,8vw,60px);font-weight:bold;color:#222;position:absolute;top:50%;transform:translateY(-50%);transition:all 1s ease;z-index:10}
 .title.move-up{top:100px;transform:translateY(0)}
 
-.start-btn{padding:16px 40px;font-size:24px;background:#4285F4;color:white;border:none;border-radius:12px;cursor:pointer;position:absolute;top:50%;transform:translateY(100px);transition:all 1s ease;z-index:1}
+.start-btn{padding:16px 40px;font-size:24px;background:#4285F4;color:white;border:none;border-radius:12px;cursor:pointer;position:absolute;top:50%;transform:translateY(100px);transition:all 1s ease;z-index:10}
 .start-btn.move-down{top:100%;opacity:0;pointer-events:none}
 
-.mode-box{display:flex;gap:30px;opacity:0;pointer-events:none;position:absolute;top:260px;z-index:2;transition:all .8s}
+.mode-box{display:flex;gap:30px;opacity:0;pointer-events:none;position:absolute;top:260px;z-index:20;transition:all .8s}
 .mode-box.show{opacity:1;pointer-events:all}
 .mode-box.move-down{top:100%;opacity:0}
 
 .pvp,.ai,.online{padding:14px 32px;font-size:22px;border:none;border-radius:10px;cursor:pointer;color:white}
 .pvp{background:#34A853}
 .ai{background:#EA4335}
-.online{background:#673AB7}
+.online{background:#673AB7;display:none}
 
-.cloud-box{display:flex;gap:20px;opacity:0;pointer-events:none;position:absolute;top:260px;z-index:2;transition:all .8s}
-.cloud-box.show{opacity:1;pointer-events:all}
-.create-room,.join-room{padding:14px 32px;font-size:22px;border:none;border-radius:10px;cursor:pointer;color:white}
-.create-room{background:#2196F3}
-.join-room{background:#FF9800}
+.difficulty-box{display:flex;gap:12px;opacity:0;pointer-events:none;position:absolute;top:260px;z-index:30;transition:all .8s}
+.difficulty-box.show{opacity:1;pointer-events:all}
+.dif-btn{padding:10px 18px;font-size:18px;border:none;border-radius:8px;color:white;cursor:pointer}
+.dif-easy{background:#34A853}
+.dif-normal{background:#FBBC05}
+.dif-hard{background:#EA4335}
+.dif-hell{background:#673AB7;opacity:.5;pointer-events:none}
+.dif-hell.unlocked{opacity:1;pointer-events:all}
 
-.modal{position:fixed;width:300px;background:white;padding:25px;border-radius:16px;box-shadow:0 10px 30px #00000033;text-align:center;top:100%;transition:all .3s;z-index:9999}
-.modal.show{top:50%;transform:translateY(-50%)}
-.modal input{width:100%;padding:10px;margin:15px 0;border:1px solid #ddd;border-radius:8px;text-align:center}
-.modal button{padding:8px 16px;margin:0 4px;border:none;border-radius:8px;cursor:pointer}
-.btn-confirm{background:#4285F4;color:white}
-.btn-cancel{background:#999;color:white}
-
-.status{position:absolute;top:160px;font-size:26px;font-weight:bold;opacity:0;z-index:2}
+.status{position:absolute;top:160px;font-size:26px;font-weight:bold;opacity:0;z-index:15}
 .status.show{opacity:1}
 
-.board{display:grid;grid-template-columns:repeat(3,100px);gap:8px;position:absolute;top:100%;transition:all .5s;opacity:0;pointer-events:none;z-index:2}
+.board{display:grid;grid-template-columns:repeat(3,100px);gap:8px;position:absolute;top:100%;transition:all .5s;opacity:0;pointer-events:none;z-index:5}
 .board.show{top:220px;opacity:1;pointer-events:all}
 .cell{width:100px;height:100px;background:white;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer}
 
@@ -51,14 +47,8 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
 .btn-restart{background:#4285F4;color:white;padding:10px 16px;border:none;border-radius:8px;cursor:pointer}
 .btn-menu{background:#999;color:white;padding:10px 16px;border:none;border-radius:8px;cursor:pointer}
 
-.difficulty-box{display:flex;gap:12px;opacity:0;pointer-events:none;position:absolute;top:260px;z-index:2;transition:all .8s}
-.difficulty-box.show{opacity:1;pointer-events:all}
-.dif-btn{padding:10px 18px;font-size:18px;border:none;border-radius:8px;color:white;cursor:pointer}
-.dif-easy{background:#34A853}
-.dif-normal{background:#FBBC05}
-.dif-hard{background:#EA4335}
-.dif-hell{background:#673AB7;opacity:.5;pointer-events:none}
-.dif-hell.unlocked{opacity:1;pointer-events:all}
+.modal{display:none!important}
+.cloud-box{display:none!important}
 </style>
 </head>
 <body>
@@ -70,12 +60,6 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
   <div class="mode-box">
     <button class="pvp">真人对战</button>
     <button class="ai">AI对战</button>
-    <button class="online">云端联机</button>
-  </div>
-
-  <div class="cloud-box">
-    <button class="create-room">创建房间</button>
-    <button class="join-room">加入房间</button>
   </div>
 
   <div class="difficulty-box">
@@ -83,19 +67,6 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
     <button class="dif-btn dif-normal" data-dif="normal">普通</button>
     <button class="dif-btn dif-hard" data-dif="hard">困难</button>
     <button class="dif-btn dif-hell" data-dif="hell">地狱</button>
-  </div>
-
-  <div class="modal input-modal">
-    <h3 class="modal-title">输入房间号</h3>
-    <input class="room-input" type="text" placeholder="请输入房间号">
-    <button class="btn-cancel cancel-room">取消</button>
-    <button class="btn-confirm confirm-room">确认</button>
-  </div>
-
-  <div class="modal tip-modal">
-    <h3 class="tip-title"></h3>
-    <p class="tip-content"></p>
-    <button class="btn-cancel close-tip">确定</button>
   </div>
 
   <div class="status"></div>
@@ -111,28 +82,14 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
 </div>
 
 <script>
-// ==============================================
-// 公共 WSS 联机：wss://echo.websocket.events
-// ==============================================
-const socket = new WebSocket('wss://echo.websocket.events');
-
 const title = document.querySelector('.title');
 const startBtn = document.querySelector('.start-btn');
 const modeBox = document.querySelector('.mode-box');
 const pvpBtn = document.querySelector('.pvp');
 const aiBtn = document.querySelector('.ai');
-const onlineBtn = document.querySelector('.online');
-const cloudBox = document.querySelector('.cloud-box');
-const createBtn = document.querySelector('.create-room');
-const joinBtn = document.querySelector('.join-room');
 const difficultyBox = document.querySelector('.difficulty-box');
 const difBtns = document.querySelectorAll('.dif-btn');
 const hellBtn = document.querySelector('.dif-hell');
-const inputModal = document.querySelector('.input-modal');
-const roomInput = document.querySelector('.room-input');
-const tipModal = document.querySelector('.tip-modal');
-const tipTitle = document.querySelector('.tip-title');
-const tipContent = document.querySelector('.tip-content');
 const status = document.querySelector('.status');
 const board = document.querySelector('.board');
 const endModal = document.querySelector('.end-modal');
@@ -153,58 +110,7 @@ let isAI = false;
 let aiLevel = '';
 let gameMode = '';
 let hellMode = false;
-let hellDoubleFirst = false;
 let hardWinStreak = 0;
-
-let roomId = '';
-let isHost = false;
-let myMark = '🔵';
-let peerMark = '🔴';
-let roomAction = '';
-let peerConnected = false;
-
-// 连接状态
-socket.onopen = () => {
-  console.log('WebSocket 已连接');
-};
-
-socket.onclose = () => {
-  showTip('提示', '服务器连接已断开');
-};
-
-socket.onerror = () => {
-  showTip('错误', '服务器连接失败');
-};
-
-// 接收对方消息
-socket.onmessage = (evt) => {
-  try {
-    const data = JSON.parse(evt.data);
-    if (data.room !== roomId) return;
-
-    if (data.type === 'join') {
-      peerConnected = true;
-      showTip('成功', '玩家已加入');
-      setTimeout(startRealGame, 1000);
-    }
-    else if (data.type === 'move') {
-      const cell = cells[data.index];
-      if (!cell.textContent) {
-        cell.textContent = data.mark;
-        current = data.next;
-        status.textContent = current === '🔵' ? '蓝方回合' : '红方回合';
-        checkGame();
-      }
-    }
-  } catch (e) {}
-};
-
-// 发送消息
-function send(data) {
-  if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify(data));
-  }
-}
 
 for (let i=0;i<9;i++){
   const c = document.createElement('div');
@@ -235,59 +141,11 @@ aiBtn.onclick = () => {
   setTimeout(()=>difficultyBox.classList.add('show'),400);
 }
 
-onlineBtn.onclick = () => {
-  modeBox.classList.add('move-down');
-  setTimeout(()=>cloudBox.classList.add('show'),400);
-}
-
-createBtn.onclick = () => {
-  roomAction = 'create';
-  document.querySelector('.modal-title').textContent = '创建房间';
-  inputModal.classList.add('show');
-}
-
-joinBtn.onclick = () => {
-  roomAction = 'join';
-  document.querySelector('.modal-title').textContent = '加入房间';
-  inputModal.classList.add('show');
-}
-
-document.querySelector('.cancel-room').onclick = () => {
-  inputModal.classList.remove('show');
-}
-
-document.querySelector('.confirm-room').onclick = () => {
-  roomId = roomInput.value.trim();
-  if (!roomId) { showTip('错误','房间号不能为空'); return; }
-  inputModal.classList.remove('show');
-
-  if (roomAction === 'create') {
-    isHost = true;
-    showTip('房间 '+roomId,'等待玩家加入...');
-  } else {
-    isHost = false;
-    send({ type: 'join', room: roomId });
-    showTip('已发送请求','等待房主响应');
-  }
-}
-
-function startRealGame() {
-  tipModal.classList.remove('show');
-  gameMode = 'cloud';
-  cloudBox.classList.remove('show');
-  resetBoard();
-  status.classList.add('show');
-  board.classList.add('show');
-  myMark = isHost ? '🔵' : '🔴';
-  current = '🔵';
-  status.textContent = isHost ? '蓝方回合' : '等待对方';
-}
-
 difBtns.forEach(btn=>{
   btn.onclick = () => {
     const dif = btn.dataset.dif;
     if (dif === 'hell' && !hellBtn.classList.contains('unlocked')){
-      showTip('提示','未解锁');
+      alert('未解锁地狱难度');
       return;
     }
     isAI = true;
@@ -313,27 +171,8 @@ function clickCell(e){
   const idx = +cell.dataset.index;
   if (cell.textContent || gameOver) return;
 
-  if (gameMode === 'cloud') {
-    if (current !== myMark) {
-      showTip('提示','请等待对方回合');
-      return;
-    }
-  }
-
   cell.textContent = current;
-  const next = current === '🔵' ? '🔴' : '🔵';
-
-  if (gameMode === 'cloud') {
-    send({
-      type: 'move',
-      room: roomId,
-      index: idx,
-      mark: current,
-      next: next
-    });
-  }
-
-  current = next;
+  current = current === '🔵' ? '🔴' : '🔵';
   status.textContent = current === '🔵' ? '蓝方回合' : '红方回合';
   checkGame();
   if (gameOver) return;
@@ -388,19 +227,15 @@ function resetBoard(){
   cells.forEach(c=>c.textContent='');
   gameOver=false;
   current='🔵';
-  hellDoubleFirst=false;
   endModal.classList.remove('show');
   status.textContent='蓝方回合';
 }
 
 btnRestart.onclick=()=>{
-  if(gameMode==='cloud'){resetBoard();return}
-  if(gameMode==='pvp'){resetBoard();return}
-  endModal.classList.add('hide');
-  setTimeout(()=>{
-    endModal.classList.remove('show','hide');
-    difficultyBox.classList.add('show');
-  },300);
+  if(gameMode==='pvp'||isAI){
+    resetBoard();
+    return;
+  }
 }
 
 btnMenu.onclick=()=>{
@@ -408,22 +243,13 @@ btnMenu.onclick=()=>{
   board.classList.remove('show');
   status.classList.remove('show');
   modeBox.classList.remove('show','move-down');
-  cloudBox.classList.remove('show');
   difficultyBox.classList.remove('show');
-  peerConnected = false;
   setTimeout(()=>{
     title.classList.remove('move-up');
     startBtn.classList.remove('move-down');
     resetBoard();
   },100);
 }
-
-function showTip(t,c){
-  tipTitle.textContent=t;
-  tipContent.textContent=c;
-  tipModal.classList.add('show');
-}
-document.querySelector('.close-tip').onclick=()=>tipModal.classList.remove('show');
 </script>
 </body>
 </html>
