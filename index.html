@@ -17,7 +17,6 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
 
 .mode-box{display:flex;gap:30px;opacity:0;pointer-events:none;position:absolute;top:260px;z-index:20;transition:all .8s}
 .mode-box.show{opacity:1;pointer-events:all}
-.mode-box.move-down{top:100%;opacity:0}
 
 .pvp,.ai,.online{padding:14px 32px;font-size:22px;border:none;border-radius:10px;cursor:pointer;color:white}
 .pvp{background:#34A853}
@@ -96,11 +95,10 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
   </div>
 
   <div class="room-modal">
-    <div>房间号（6位数字）</div>
-    <input type="text" id="roomInput" maxlength="6" placeholder="输入6位数字">
+    <div>房间ID（英文数字随便输）</div>
+    <input type="text" id="roomId" placeholder="比如: tictac01">
     <div class="btns">
-      <button id="createRoom">创建房间</button>
-      <button id="joinRoom">加入房间</button>
+      <button id="connect">连接</button>
       <button class="close">取消</button>
     </div>
   </div>
@@ -116,7 +114,7 @@ if (isAprilFool) {
   document.querySelector(".start-btn").textContent = "开始yóu息";
 }
 
-// ====================== 全局DOM ======================
+// ====================== DOM ======================
 const title = document.querySelector('.title');
 const startBtn = document.querySelector('.start-btn');
 const modeBox = document.querySelector('.mode-box');
@@ -124,19 +122,13 @@ const pvpBtn = document.querySelector('.pvp');
 const aiBtn = document.querySelector('.ai');
 const onlineBtn = document.querySelector('.online');
 const difficultyBox = document.querySelector('.difficulty-box');
-const difBtns = document.querySelectorAll('.dif-btn');
-const hellBtn = document.querySelector('.dif-hell');
-const status = document.querySelector('.status');
+const statusText = document.querySelector('.status');
 const board = document.querySelector('.board');
-const endModal = document.querySelector('.end-modal');
+const endModal = document.querySelector('.endModal');
 const resultText = document.querySelector('.result');
-const btnRestart = document.querySelector('.btn-restart');
-const btnMenu = document.querySelector('.btn-menu');
-
 const roomModal = document.querySelector('.room-modal');
-const roomInput = document.getElementById('roomInput');
-const createRoomBtn = document.getElementById('createRoom');
-const joinRoomBtn = document.getElementById('joinRoom');
+const roomInput = document.getElementById('roomId');
+const connectBtn = document.getElementById('connect');
 const closeRoomBtn = document.querySelector('.room-modal .close');
 
 const winPatterns = [
@@ -145,173 +137,132 @@ const winPatterns = [
   [0,4,8],[2,4,6]
 ];
 
-// ====================== 全局状态 ======================
 let cells = [];
 let currentPlayer = '🔵';
 let gameOver = false;
 let isAI = false;
-let aiLevel = '';
-let gameMode = '';
-let hellMode = false;
-let hardWinStreak = 0;
-
-// 联机核心（BroadcastChannel）
 let isOnline = false;
-let roomId = '';
-let mySymbol = '';
-let channel = null;
-let roomMembers = 0;
+let myRole = '';
+let room = '';
 
-// ====================== 棋盘初始化 ======================
-for (let i=0;i<9;i++){
+// WebSocket 用你给的公共服务器
+let ws;
+const WS_URL = 'wss://echo.websocket.events';
+
+// 初始化棋盘
+for (let i=0; i<9; i++) {
   const c = document.createElement('div');
   c.classList.add('cell');
   c.dataset.index = i;
-  c.addEventListener('click', clickCell);
+  c.addEventListener('click', onCellClick);
   board.appendChild(c);
   cells.push(c);
 }
 
-// ====================== 跨标签页通信 ======================
-function connectChannel(room) {
-  if (channel) channel.close();
-  channel = new BroadcastChannel(`tic_tac_room_${room}`);
-  channel.onmessage = (e) => {
-    const { type, data } = e.data;
-    if (type === 'MOVE') {
-      cells[data.index].textContent = data.player;
-      currentPlayer = data.nextPlayer;
-      updateStatus();
-      checkGame();
-    }
-    if (type === 'JOIN') {
-      roomMembers = data.count;
-      status.textContent = `房间 ${roomId} - ${roomMembers}/2 人`;
-      if (roomMembers === 2) startOnlineGame();
-    }
+// ====================== WebSocket 连接 ======================
+function connectWS(roomId) {
+  room = roomId;
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    statusText.textContent = `房间: ${room} → 已连接`;
+    myRole = Math.random() < 0.5 ? '🔵' : '🔴';
+    syncBoard();
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.room !== room) return;
+
+      // 落子同步
+      if (data.type === 'move') {
+        cells[data.index].textContent = data.player;
+        currentPlayer = data.next;
+        updateStatus();
+        checkGame();
+      }
+    } catch {}
   };
 }
 
-function sendMessage(type, data) {
-  if (channel) {
-    channel.postMessage({ type, data });
-  }
+// 发送同步
+function sendMove(index) {
+  if (!ws) return;
+  ws.send(JSON.stringify({
+    type: 'move',
+    room,
+    index,
+    player: currentPlayer,
+    next: currentPlayer === '🔵' ? '🔴' : '🔵'
+  }));
 }
 
-// ====================== 房间操作 ======================
-onlineBtn.onclick = () => {
-  gameMode = 'online';
-  isAI = false;
-  isOnline = true;
-  modeBox.classList.remove('show');
-  roomModal.classList.add('show');
-};
-
-createRoomBtn.onclick = () => {
-  roomId = roomInput.value.trim();
-  if (!/^\d{6}$/.test(roomId)) return alert("6位数字房间号");
-  roomMembers = 1;
-  mySymbol = '🔵';
-  connectChannel(roomId);
-  sendMessage('JOIN', { count: roomMembers });
-  roomModal.classList.remove('show');
-  status.textContent = `房间 ${roomId} - 等待对手（1/2）`;
-  status.classList.add('show');
-  board.classList.add('show');
-  resetBoard();
-};
-
-joinRoomBtn.onclick = () => {
-  roomId = roomInput.value.trim();
-  if (!/^\d{6}$/.test(roomId)) return alert("6位数字房间号");
-  roomMembers = 2;
-  mySymbol = '🔴';
-  connectChannel(roomId);
-  sendMessage('JOIN', { count: roomMembers });
-  roomModal.classList.remove('show');
-  status.textContent = `房间 ${roomId} - 已加入（2/2）`;
-  status.classList.add('show');
-  board.classList.add('show');
-  resetBoard();
-  startOnlineGame();
-};
-
-function startOnlineGame() {
-  currentPlayer = Math.random() < 0.5 ? '🔵' : '🔴';
-  updateStatus();
-}
-
-// ====================== 游戏核心 ======================
-function clickCell(e){
+// ====================== 点击格子 ======================
+function onCellClick(e) {
   const idx = +e.target.dataset.index;
   if (cells[idx].textContent || gameOver) return;
 
-  // 联机：只能下自己颜色
-  if (isOnline && currentPlayer !== mySymbol) {
-    status.textContent = `等待 ${currentPlayer} 落子`;
+  // 联机：只能下自己的颜色
+  if (isOnline && currentPlayer !== myRole) {
+    statusText.textContent = `等待 ${currentPlayer}`;
     return;
   }
 
   // 愚人节延迟
   if (isAprilFool && Math.random() < 0.3) {
-    setTimeout(() => placeMove(idx), 600 + Math.random()*800);
+    setTimeout(() => place(idx), 600 + Math.random()*800);
   } else {
-    placeMove(idx);
+    place(idx);
   }
 }
 
-function placeMove(index) {
+function place(index) {
   cells[index].textContent = currentPlayer;
-  if (isOnline) {
-    sendMessage('MOVE', {
-      index,
-      player: currentPlayer,
-      nextPlayer: currentPlayer === '🔵' ? '🔴' : '🔵'
-    });
-  }
+  if (isOnline) sendMove(index);
+
   currentPlayer = currentPlayer === '🔵' ? '🔴' : '🔵';
   updateStatus();
   checkGame();
 
-  // AI回合
   if (isAI && currentPlayer === '🔴' && !gameOver) {
     setTimeout(aiMove, 300);
   }
 }
 
+// ====================== 游戏逻辑 ======================
 function updateStatus() {
-  status.textContent = isOnline
-    ? `当前：${currentPlayer} | 你：${mySymbol}`
+  statusText.textContent = isOnline
+    ? `当前：${currentPlayer} | 我：${myRole}`
     : `${currentPlayer} 回合`;
 }
 
 function checkGame() {
-  const vals = cells.map(x => x.textContent);
+  const v = cells.map(x => x.textContent);
   let win = null;
   for (const p of winPatterns) {
     const [a,b,c] = p;
-    if (vals[a] && vals[a] === vals[b] && vals[a] === vals[c]) {
-      win = vals[a]; break;
+    if (v[a] && v[a] === v[b] && v[a] === v[c]) {
+      win = v[a]; break;
     }
   }
   if (win) {
     gameOver = true;
     resultText.textContent = win + ' 胜利！';
-    setTimeout(() => endModal.classList.add('show'), 300);
+    document.querySelector('.end-modal').classList.add('show');
     return;
   }
-  if (!vals.includes('')) {
+  if (!v.includes('')) {
     resultText.textContent = '平局';
     gameOver = true;
-    endModal.classList.add('show');
+    document.querySelector('.end-modal').classList.add('show');
   }
 }
 
-// ====================== AI逻辑 ======================
 function aiMove() {
   const empty = cells.filter(c => !c.textContent);
-  if (!empty.length || gameOver) return;
-  let best = findWin('🔴') || findWin('🔵') || (cells[4].textContent ? empty[0] : cells[4]);
+  if (!empty.length) return;
+  let best = findWin('🔴') || findWin('🔵') || cells[4] || empty[0];
   best.textContent = '🔴';
   checkGame();
   if (!gameOver) {
@@ -330,23 +281,62 @@ function findWin(m) {
   return null;
 }
 
-// ====================== 菜单与重置 ======================
-startBtn.onclick = () => {
-  title.classList.add('move-up');
-  startBtn.classList.add('move-down');
-  setTimeout(() => modeBox.classList.add('show'), 500);
+// ====================== 房间 ======================
+onlineBtn.onclick = () => {
+  isOnline = true;
+  isAI = false;
+  modeBox.classList.remove('show');
+  roomModal.classList.add('show');
 };
 
+connectBtn.onclick = () => {
+  const r = roomInput.value.trim();
+  if (!r) return alert('输入房间号');
+  roomModal.classList.remove('show');
+  connectWS(r);
+  statusText.classList.add('show');
+  board.classList.add('show');
+  resetBoard();
+};
+
+// ====================== 本地PVP随机先手 ======================
 pvpBtn.onclick = () => {
-  gameMode = 'pvp';
-  isAI = false;
   isOnline = false;
+  isAI = false;
   modeBox.classList.remove('show');
   resetBoard();
   currentPlayer = Math.random() < 0.5 ? '🔵' : '🔴';
   updateStatus();
-  status.classList.add('show');
+  statusText.classList.add('show');
   board.classList.add('show');
+};
+
+// ====================== 重置 & 菜单 ======================
+function resetBoard() {
+  cells.forEach(c => c.textContent = '');
+  gameOver = false;
+  document.querySelector('.end-modal').classList.remove('show');
+  updateStatus();
+}
+
+document.querySelector('.btn-restart').onclick = resetBoard;
+
+document.querySelector('.btn-menu').onclick = () => {
+  if (ws) ws.close();
+  isOnline = false;
+  board.classList.remove('show');
+  statusText.classList.remove('show');
+  document.querySelector('.end-modal').classList.remove('show');
+  setTimeout(() => {
+    title.classList.remove('move-up');
+    startBtn.classList.remove('move-down');
+  }, 100);
+};
+
+startBtn.onclick = () => {
+  title.classList.add('move-up');
+  startBtn.classList.add('move-down');
+  setTimeout(() => modeBox.classList.add('show'), 500);
 };
 
 aiBtn.onclick = () => {
@@ -354,64 +344,23 @@ aiBtn.onclick = () => {
   setTimeout(() => difficultyBox.classList.add('show'), 400);
 };
 
-difBtns.forEach(btn => {
+document.querySelectorAll('.dif-btn').forEach(btn => {
   btn.onclick = () => {
-    const dif = btn.dataset.dif;
-    if (dif === 'hell' && !hellBtn.classList.contains('unlocked')) {
-      alert('未解锁地狱难度');
-      return;
-    }
     isAI = true;
-    aiLevel = dif;
-    hellMode = dif === 'hell';
+    isOnline = false;
     difficultyBox.classList.remove('show');
     resetBoard();
-    status.classList.add('show');
+    statusText.classList.add('show');
     board.classList.add('show');
-    if (dif === 'hard' || dif === 'hell') {
-      currentPlayer = '🔴';
-      updateStatus();
-      setTimeout(() => {
-        aiMove();
-        if (hellMode) setTimeout(aiMove, 300);
-      }, 300);
-    }
-  }
+  };
 });
-
-function resetBoard() {
-  cells.forEach(c => c.textContent = '');
-  gameOver = false;
-  endModal.classList.remove('show');
-  if (!isOnline) currentPlayer = '🔵';
-}
-
-btnRestart.onclick = () => {
-  if (!isOnline) resetBoard();
-  else alert("联机中请返回菜单重开");
-};
-
-btnMenu.onclick = () => {
-  endModal.classList.remove('show');
-  board.classList.remove('show');
-  status.classList.remove('show');
-  modeBox.classList.remove('show','move-down');
-  difficultyBox.classList.remove('show');
-  roomModal.classList.remove('show');
-  if (channel) channel.close();
-  isOnline = false;
-  roomMembers = 0;
-  setTimeout(() => {
-    title.classList.remove('move-up');
-    startBtn.classList.remove('move-down');
-    resetBoard();
-  }, 100);
-};
 
 closeRoomBtn.onclick = () => {
   roomModal.classList.remove('show');
   modeBox.classList.add('show');
 };
+
+function syncBoard() {}
 </script>
 </body>
 </html>
