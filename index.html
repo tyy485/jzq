@@ -6,43 +6,190 @@
 <title>井字棋</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
-html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content:center;align-items:center}
-.container{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+html,body{width:100%;height:100%;background:#f7f7f7;overflow:hidden}
+.container{position:relative;width:100%;height:100%}
 
-.title{font-size:clamp(32px,8vw,60px);font-weight:bold;color:#222;position:absolute;top:50%;transform:translateY(-50%);transition:all 1s ease;z-index:10}
-.title.move-up{top:100px;transform:translateY(0)}
+.title{
+  font-size:clamp(32px,8vw,60px);
+  font-weight:bold;color:#222;
+  position:absolute;
+  left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  transition:all 0.7s ease;
+  z-index:10;
+  user-select:none;
+}
+.title.move-up{
+  top:-100px;
+  opacity:0;
+}
 
-.start-btn{padding:16px 40px;font-size:24px;background:#4285F4;color:white;border:none;border-radius:12px;cursor:pointer;position:absolute;top:50%;transform:translateY(100px);transition:all 1s ease;z-index:10}
-.start-btn.move-down{top:100%;opacity:0;pointer-events:none}
+.start-btn{
+  padding:16px 40px;
+  font-size:24px;
+  background:#4285F4;color:white;
+  border:none;border-radius:12px;
+  cursor:pointer;
+  position:absolute;
+  left:50%;top:50%;
+  transform:translate(-50%, 80px);
+  transition:all 0.7s ease;
+  z-index:11;
+}
+.start-btn.move-down{
+  top:110%;
+  opacity:0;
+  pointer-events:none;
+}
 
-.mode-box{display:flex;gap:30px;opacity:0;pointer-events:none;position:absolute;top:260px;z-index:20;transition:all .8s}
-.mode-box.show{opacity:1;pointer-events:all}
+.back-btn{
+  position:absolute;
+  top:20px;left:20px;
+  padding:10px 20px;
+  font-size:18px;
+  background:#666;color:white;
+  border:none;border-radius:8px;
+  cursor:pointer;
+  z-index:9999;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.4s;
+}
+.back-btn.show{
+  opacity:1;
+  pointer-events:all;
+}
 
-.pvp,.ai{padding:14px 32px;font-size:22px;border:none;border-radius:10px;cursor:pointer;color:white}
+.mode-box{
+  display:flex;gap:30px;
+  position:absolute;
+  left:50%;top:260px;
+  transform:translateX(-50%);
+  z-index:20;
+  opacity:0;
+  pointer-events:none;
+  transition:all 0.4s ease;
+}
+.mode-box.show{
+  opacity:1;
+  pointer-events:all;
+}
+.mode-box.hide{
+  opacity:0;
+  transform:translate(-50%, 40px);
+  pointer-events:none;
+}
+
+.pvp,.ai{
+  padding:14px 32px;
+  font-size:22px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  color:white;
+  position:relative;
+  z-index:21;
+}
 .pvp{background:#34A853}
 .ai{background:#EA4335}
 
-.difficulty-box{display:flex;gap:12px;opacity:0;pointer-events:none;position:absolute;top:260px;z-index:30;transition:all .8s}
-.difficulty-box.show{opacity:1;pointer-events:all}
-.dif-btn{padding:10px 18px;font-size:18px;border:none;border-radius:8px;color:white;cursor:pointer}
-.dif-easy{background:#34A853}
-.dif-normal{background:#FB9900}
-.dif-hard{background:#EA4335}
-.dif-hell{background:#673AB7;opacity:.5;pointer-events:none}
+.difficulty-box{
+  display:flex;gap:12px;
+  position:absolute;
+  left:50%;top:260px;
+  transform:translateX(-50%);
+  z-index:30;
+}
+.dif-btn{
+  padding:10px 18px;
+  font-size:18px;
+  border:none;
+  border-radius:8px;
+  color:white;
+  cursor:pointer;
+  opacity:0;
+  pointer-events:none;
+  transition:all 0.4s ease;
+  z-index:31;
+}
+.dif-easy{background:#34A853;transform:translateX(-60px);}
+.dif-normal{background:#FB9900;transform:translateY(40px);}
+.dif-hard{background:#EA4335;transform:translateX(60px);}
+.dif-btn.show{
+  opacity:1;
+  transform:translate(0,0);
+  pointer-events:all;
+}
 
-.status{position:absolute;top:160px;font-size:26px;font-weight:bold;opacity:0;z-index:15}
+.status{
+  position:absolute;
+  left:50%;top:160px;
+  transform:translateX(-50%);
+  font-size:26px;font-weight:bold;
+  opacity:0;
+  z-index:15;
+  transition:opacity 0.3s;
+  user-select:none;
+}
 .status.show{opacity:1}
 
-.board{display:grid;grid-template-columns:repeat(3,100px);gap:8px;position:absolute;top:100%;transition:all .5s;opacity:0;pointer-events:none;z-index:5}
-.board.show{top:220px;opacity:1;pointer-events:all}
-.cell{width:100px;height:100px;background:white;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer}
+.board{
+  display:grid;grid-template-columns:repeat(3,100px);
+  gap:8px;
+  position:absolute;
+  left:50%;top:220px;
+  transform:translateX(-50%);
+  opacity:0;
+  pointer-events:none;
+  transition:all 0.4s ease;
+  z-index:5;
+}
+.board.show{
+  opacity:1;
+  pointer-events:all;
+}
+.cell{
+  width:100px;height:100px;
+  background:white;
+  border:2px solid #333;
+  display:flex;align-items:center;justify-content:center;
+  font-size:48px;
+  cursor:pointer;
+}
 
-.end-modal{position:fixed;width:300px;background:white;padding:25px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.3);top:100%;transition:all .3s;text-align:center;z-index:9999}
-.end-modal.show{top:50%;transform:translate(-50%,-50%)}
+/* 🔥 修复：弹窗完全藏屏幕外，不露小角 */
+.end-modal{
+  position:fixed;
+  width:300px;
+  background:white;
+  padding:25px;
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  left:50%;
+  top:100%;
+  transform:translate(-50%, 0);
+  transition:all 0.3s;
+  text-align:center;
+  z-index:99999;
+}
+.end-modal.show{
+  top:50%;
+  transform:translate(-50%, -50%);
+}
+
 .result{font-size:24px;font-weight:bold;margin-bottom:20px}
 .btns{display:flex;gap:10px;justify-content:center}
-.btn-restart{background:#4285F4;color:white;padding:10px 16px;border:none;border-radius:8px;cursor:pointer}
-.btn-menu{background:#999;color:white;padding:10px 16px;border:none;border-radius:8px;cursor:pointer}
+.btn-restart,.btn-menu{
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  color:white;
+  z-index:100000;
+  position:relative;
+}
+.btn-restart{background:#4285F4}
+.btn-menu{background:#999}
 </style>
 </head>
 <body>
@@ -50,6 +197,7 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
 <div class="container">
   <div class="title">井字棋</div>
   <button class="start-btn">开始游戏</button>
+  <button class="back-btn">上一步</button>
 
   <div class="mode-box">
     <button class="pvp">真人对战</button>
@@ -60,7 +208,6 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
     <button class="dif-btn dif-easy" data-dif="easy">简单</button>
     <button class="dif-btn dif-normal" data-dif="normal">普通</button>
     <button class="dif-btn dif-hard" data-dif="hard">困难</button>
-    <button class="dif-btn dif-hell" data-dif="hell">地狱</button>
   </div>
 
   <div class="status"></div>
@@ -76,22 +223,13 @@ html,body{width:100%;height:100%;background:#f7f7f7;display:flex;justify-content
 </div>
 
 <script>
-// 愚人节彩蛋
-const now = new Date();
-const isAprilFool = now.getMonth() === 3 && now.getDate() === 1;
-if (isAprilFool) {
-  document.title = "jǐng自启";
-  document.querySelector(".title").textContent = "口子旗🤡";
-  document.querySelector(".start-btn").textContent = "开始yóu息";
-}
-
-// DOM
 const title = document.querySelector('.title');
 const startBtn = document.querySelector('.start-btn');
+const backBtn = document.querySelector('.back-btn');
 const modeBox = document.querySelector('.mode-box');
 const pvpBtn = document.querySelector('.pvp');
 const aiBtn = document.querySelector('.ai');
-const difficultyBox = document.querySelector('.difficulty-box');
+const difBtns = document.querySelectorAll('.dif-btn');
 const statusText = document.querySelector('.status');
 const board = document.querySelector('.board');
 const endModal = document.querySelector('.end-modal');
@@ -109,8 +247,9 @@ let cells = [];
 let current = '🔵';
 let gameOver = false;
 let isAI = false;
-let aiLevel = '';
-let hellMode = false;
+let history = [];
+let page = 'main';
+let fromMode = '';
 
 // 初始化棋盘
 for (let i=0; i<9; i++) {
@@ -122,43 +261,38 @@ for (let i=0; i<9; i++) {
   cells.push(c);
 }
 
-// 点击格子
 function clickCell(e) {
+  if (page !== 'gaming' || gameOver) return;
   const cell = e.target;
   const idx = +cell.dataset.index;
-  if (cell.textContent || gameOver) return;
+  if (cell.textContent) return;
 
-  // 愚人节延迟
-  if (isAprilFool && Math.random() < 0.3) {
-    setTimeout(() => place(cell, idx), 600 + Math.random()*900);
-  } else {
-    place(cell, idx);
-  }
-}
-
-function place(cell, idx) {
+  history.push({ index: idx, val: current });
   cell.textContent = current;
   current = current === '🔵' ? '🔴' : '🔵';
   updateStatus();
   checkGame();
-  if (gameOver) return;
-  if (isAI && current === '🔴') setTimeout(aiMove, 300);
+
+  if (!gameOver && isAI && current === '🔴') {
+    setTimeout(aiMove, 300);
+  }
 }
 
 function updateStatus() {
   statusText.textContent = current === '🔵' ? '蓝方回合' : '红方回合';
 }
 
-// AI
 function aiMove() {
   const empty = cells.filter(c => !c.textContent);
   if (!empty.length || gameOver) return;
   let best = findWin('🔴') || findWin('🔵') || (cells[4].textContent ? empty[0] : cells[4]);
+  history.push({ index: +best.dataset.index, val: '🔴' });
   best.textContent = '🔴';
   checkGame();
-  if (gameOver) return;
-  current = '🔵';
-  updateStatus();
+  if (!gameOver) {
+    current = '🔵';
+    updateStatus();
+  }
 }
 
 function findWin(m) {
@@ -171,13 +305,12 @@ function findWin(m) {
   return null;
 }
 
-// 胜负
 function checkGame() {
   const v = cells.map(x => x.textContent);
   let win = null;
   for (const p of winPatterns) {
     const [a,b,c] = p;
-    if (v[a] && v[a] === v[b] && v[a] === v[c]) { win = v[a]; break; }
+    if (v[a] && v[a]===v[b] && v[a]===v[c]) { win=v[a]; break; }
   }
   if (win) {
     gameOver = true;
@@ -186,58 +319,105 @@ function checkGame() {
     return;
   }
   if (!v.includes('')) {
-    resultText.textContent = '平局';
     gameOver = true;
+    resultText.textContent = '平局';
     endModal.classList.add('show');
   }
 }
 
-// 重置
 function resetBoard() {
   cells.forEach(c => c.textContent = '');
   gameOver = false;
   endModal.classList.remove('show');
-  current = Math.random() < 0.5 ? '🔵' : '🔴';
+  current = '🔵';
+  history = [];
   updateStatus();
 }
 
-// 按钮
+// 开始游戏
 startBtn.onclick = () => {
+  page = 'mode';
   title.classList.add('move-up');
   startBtn.classList.add('move-down');
-  setTimeout(() => modeBox.classList.add('show'), 500);
+  setTimeout(() => {
+    modeBox.classList.add('show');
+    backBtn.classList.add('show');
+  }, 400);
 };
 
+// 上一步
+backBtn.onclick = () => {
+  if (page === 'mode') {
+    page = 'main';
+    modeBox.classList.remove('show');
+    backBtn.classList.remove('show');
+    title.classList.remove('move-up');
+    startBtn.classList.remove('move-down');
+  }
+  else if (page === 'aiDiff') {
+    page = 'mode';
+    difBtns.forEach(b => b.classList.remove('show'));
+    setTimeout(() => {
+      modeBox.classList.remove('hide');
+      modeBox.classList.add('show');
+    }, 100);
+  }
+  else if (page === 'gaming') {
+    if (history.length > 0) {
+      const last = history.pop();
+      cells[last.index].textContent = '';
+      current = last.val;
+      updateStatus();
+      gameOver = false;
+      endModal.classList.remove('show');
+    } else {
+      page = fromMode;
+      board.classList.remove('show');
+      statusText.classList.remove('show');
+      setTimeout(() => {
+        modeBox.classList.remove('hide');
+        modeBox.classList.add('show');
+      }, 100);
+    }
+  }
+};
+
+// 真人对战
 pvpBtn.onclick = () => {
   isAI = false;
+  fromMode = 'mode';
+  page = 'gaming';
   modeBox.classList.remove('show');
-  resetBoard();
-  statusText.classList.add('show');
-  board.classList.add('show');
-};
-
-aiBtn.onclick = () => {
-  modeBox.classList.add('move-down');
-  setTimeout(() => difficultyBox.classList.add('show'), 400);
-};
-
-document.querySelectorAll('.dif-btn').forEach(btn => {
-  btn.onclick = () => {
-    isAI = true;
-    aiLevel = btn.dataset.dif;
-    hellMode = aiLevel === 'hell';
-    difficultyBox.classList.remove('show');
+  modeBox.classList.add('hide');
+  setTimeout(() => {
     resetBoard();
     statusText.classList.add('show');
     board.classList.add('show');
-    if (aiLevel === 'hard' || aiLevel === 'hell') {
-      current = '🔴';
-      updateStatus();
-      setTimeout(() => {
-        aiMove();
-        if (hellMode) setTimeout(aiMove, 300);
-      }, 300);
-    }
+  }, 200);
+};
+
+// AI 对战
+aiBtn.onclick = () => {
+  isAI = true;
+  page = 'aiDiff';
+  modeBox.classList.remove('show');
+  modeBox.classList.add('hide');
+  setTimeout(() => {
+    difBtns.forEach(btn => btn.classList.add('show'));
+  }, 200);
+};
+
+// 难度选择
+difBtns.forEach(btn => {
+  btn.onclick = () => {
+    fromMode = 'mode';
+    page = 'gaming';
+    difBtns.forEach(b => b.classList.remove('show'));
+    setTimeout(() => {
+      resetBoard();
+      statusText.classList.add('show');
+      board.classList.add('show');
+    }, 200);
   };
 });
 
@@ -247,11 +427,12 @@ btnMenu.onclick = () => {
   endModal.classList.remove('show');
   board.classList.remove('show');
   statusText.classList.remove('show');
-  modeBox.classList.remove('show','move-down');
-  difficultyBox.classList.remove('show');
+  difBtns.forEach(b => b.classList.remove('show'));
+  resetBoard();
   setTimeout(() => {
-    title.classList.remove('move-up');
-    startBtn.classList.remove('move-down');
+    modeBox.classList.remove('hide');
+    modeBox.classList.add('show');
+    page = 'mode';
   }, 100);
 };
 </script>
