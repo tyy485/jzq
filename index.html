@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>井字棋</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
@@ -10,7 +10,7 @@ html,body{width:100%;height:100%;background:#f7f7f7;overflow:hidden}
 .container{position:relative;width:100%;height:100%}
 
 .title{
-  font-size:clamp(32px,8vw,60px);
+  font-size:48px;
   font-weight:bold;color:#222;
   position:absolute;
   left:50%;top:50%;
@@ -19,422 +19,383 @@ html,body{width:100%;height:100%;background:#f7f7f7;overflow:hidden}
   z-index:10;
   user-select:none;
 }
-.title.move-up{
-  top:-100px;
-  opacity:0;
-}
+.title.move-up{top:-80px;opacity:0;}
 
 .start-btn{
-  padding:16px 40px;
-  font-size:24px;
-  background:#4285F4;color:white;
-  border:none;border-radius:12px;
-  cursor:pointer;
-  position:absolute;
-  left:50%;top:50%;
-  transform:translate(-50%, 80px);
-  transition:all 0.7s ease;
-  z-index:11;
+  padding:16px 40px;font-size:24px;
+  background:#4285F4;color:white;border:none;border-radius:12px;
+  cursor:pointer;position:absolute;
+  left:50%;top:50%;transform:translate(-50%, 80px);
+  transition:all 0.7s ease;z-index:11;
 }
-.start-btn.move-down{
-  top:110%;
-  opacity:0;
-  pointer-events:none;
-}
+.start-btn.move-down{top:120%;opacity:0;pointer-events:none;}
 
 .back-btn{
-  position:absolute;
-  top:20px;left:20px;
-  padding:10px 20px;
-  font-size:18px;
-  background:#666;color:white;
-  border:none;border-radius:8px;
-  cursor:pointer;
-  z-index:9999;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 0.4s;
+  position:absolute;top:20px;left:20px;padding:10px 20px;
+  font-size:18px;background:#666;color:white;border:none;border-radius:8px;
+  cursor:pointer;z-index:99;
+  opacity:0;pointer-events:none;transition:opacity 0.4s;
+  user-select:none;
 }
-.back-btn.show{
-  opacity:1;
-  pointer-events:all;
-}
+.back-btn.show{opacity:1;pointer-events:all;}
+.back-btn.lock{pointer-events:none !important;opacity:0.6 !important;}
 
 .mode-box{
-  display:flex;gap:30px;
-  position:absolute;
-  left:50%;top:260px;
-  transform:translateX(-50%);
-  z-index:20;
-  opacity:0;
-  pointer-events:none;
-  transition:all 0.4s ease;
+  display:flex;gap:30px;position:absolute;
+  left:50%;top:240px;transform:translateX(-50%);
+  z-index:20;opacity:0;pointer-events:none;transition:all 0.4s ease;
 }
-.mode-box.show{
-  opacity:1;
-  pointer-events:all;
-}
-.mode-box.hide{
-  opacity:0;
-  transform:translate(-50%, 40px);
-  pointer-events:none;
-}
+.mode-box.show{opacity:1;pointer-events:all;}
+.mode-box.hide{opacity:0;transform:translate(-50%,30px);pointer-events:none;}
 
 .pvp,.ai{
-  padding:14px 32px;
-  font-size:22px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  color:white;
-  position:relative;
-  z-index:21;
+  padding:14px 32px;font-size:22px;border:none;border-radius:10px;
+  cursor:pointer;color:white;
 }
 .pvp{background:#34A853}
 .ai{background:#EA4335}
 
 .difficulty-box{
-  display:flex;gap:12px;
-  position:absolute;
-  left:50%;top:260px;
-  transform:translateX(-50%);
-  z-index:30;
+  display:flex;flex-direction:column;gap:12px;
+  position:absolute;left:50%;top:200px;transform:translateX(-50%);
 }
 .dif-btn{
-  padding:10px 18px;
-  font-size:18px;
-  border:none;
-  border-radius:8px;
-  color:white;
-  cursor:pointer;
-  opacity:0;
-  pointer-events:none;
-  transition:all 0.4s ease;
-  z-index:31;
+  width:150px;padding:10px;font-size:18px;border:none;border-radius:8px;
+  color:white;cursor:pointer;
+  opacity:0;pointer-events:none;transition:all 0.5s ease;
 }
-.dif-easy{background:#34A853;transform:translateX(-60px);}
-.dif-normal{background:#FB9900;transform:translateY(40px);}
-.dif-hard{background:#EA4335;transform:translateX(60px);}
-.dif-btn.show{
-  opacity:1;
-  transform:translate(0,0);
-  pointer-events:all;
-}
+.dif-beginner{background:#b2f2bb;color:#000;}
+.dif-easy{background:#34A853;}
+.dif-normal{background:#FB9900;}
+.dif-hard{background:#e64a19;}
+.dif-hell{background:#0a0a0a;color:#ff4444;border:1px solid red;}
+.dif-btn.show{opacity:1;pointer-events:all;}
 
 .status{
-  position:absolute;
-  left:50%;top:160px;
-  transform:translateX(-50%);
+  position:absolute;left:50%;top:150px;transform:translateX(-50%);
   font-size:26px;font-weight:bold;
-  opacity:0;
-  z-index:15;
-  transition:opacity 0.3s;
-  user-select:none;
+  opacity:0;pointer-events:none;transition:opacity 0.3s;
 }
-.status.show{opacity:1}
+.status.show{opacity:1;}
 
 .board{
-  display:grid;grid-template-columns:repeat(3,100px);
-  gap:8px;
-  position:absolute;
-  left:50%;top:220px;
-  transform:translateX(-50%);
-  opacity:0;
-  pointer-events:none;
-  transition:all 0.4s ease;
-  z-index:5;
+  display:grid;grid-template-columns:repeat(3,100px);gap:8px;
+  position:absolute;left:50%;top:220px;transform:translateX(-50%);
+  opacity:0;pointer-events:none;transition:opacity 0.4s ease;
 }
-.board.show{
-  opacity:1;
-  pointer-events:all;
-}
+.board.show{opacity:1;pointer-events:all;}
+
 .cell{
-  width:100px;height:100px;
-  background:white;
-  border:2px solid #333;
+  width:100px;height:100px;background:#fff;border:2px solid #333;
   display:flex;align-items:center;justify-content:center;
-  font-size:48px;
-  cursor:pointer;
+  font-size:48px;user-select:none;
 }
 
-/* 🔥 修复：弹窗完全藏屏幕外，不露小角 */
 .end-modal{
-  position:fixed;
-  width:300px;
-  background:white;
-  padding:25px;
-  border-radius:16px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.3);
-  left:50%;
-  top:100%;
-  transform:translate(-50%, 0);
-  transition:all 0.3s;
-  text-align:center;
-  z-index:99999;
+  position:fixed;left:50%;top:100%;
+  transform:translate(-50%,0);background:#fff;
+  padding:30px;border-radius:16px;box-shadow:0 10px 30px #0003;
+  transition:all 0.3s ease;z-index:999;
 }
-.end-modal.show{
-  top:50%;
-  transform:translate(-50%, -50%);
-}
-
-.result{font-size:24px;font-weight:bold;margin-bottom:20px}
-.btns{display:flex;gap:10px;justify-content:center}
+.end-modal.show{top:50%;transform:translate(-50%,-50%);}
+.result{font-size:24px;font-weight:bold;margin-bottom:20px;text-align:center;}
+.btns{display:flex;gap:12px;justify-content:center;}
 .btn-restart,.btn-menu{
-  padding:10px 16px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  color:white;
-  z-index:100000;
-  position:relative;
+  padding:10px 20px;border:none;border-radius:8px;
+  cursor:pointer;color:white;
 }
 .btn-restart{background:#4285F4}
-.btn-menu{background:#999}
+.btn-menu{background:#888}
 </style>
 </head>
 <body>
-
 <div class="container">
   <div class="title">井字棋</div>
-  <button class="start-btn">开始游戏</button>
-  <button class="back-btn">上一步</button>
+  <button class="start-btn" onclick="enterMode()">开始游戏</button>
+  <button class="back-btn" id="backBtn">上一步</button>
 
-  <div class="mode-box">
-    <button class="pvp">真人对战</button>
-    <button class="ai">AI 对战</button>
+  <div class="mode-box" id="modePage">
+    <button class="pvp" onclick="enterPVP()">真人对战</button>
+    <button class="ai" onclick="enterAIDiff()">AI对战</button>
   </div>
 
-  <div class="difficulty-box">
-    <button class="dif-btn dif-easy" data-dif="easy">简单</button>
-    <button class="dif-btn dif-normal" data-dif="normal">普通</button>
-    <button class="dif-btn dif-hard" data-dif="hard">困难</button>
+  <div class="difficulty-box" id="diffPage">
+    <button class="dif-btn dif-beginner" data-dif="beginner" onclick="enterAIGame(this)">初学者</button>
+    <button class="dif-btn dif-easy" data-dif="easy" onclick="enterAIGame(this)">简单</button>
+    <button class="dif-btn dif-normal" data-dif="normal" onclick="enterAIGame(this)">普通</button>
+    <button class="dif-btn dif-hard" data-dif="hard" onclick="enterAIGame(this)">困难</button>
+    <button class="dif-btn dif-hell" data-dif="hell" onclick="enterAIGame(this)">地狱</button>
   </div>
 
-  <div class="status"></div>
-  <div class="board"></div>
+  <div class="status" id="statusText">蓝方回合</div>
+  <div class="board" id="boardWrap"></div>
 
-  <div class="end-modal">
-    <div class="result"></div>
+  <div class="end-modal" id="modalWrap">
+    <div class="result" id="resText"></div>
     <div class="btns">
-      <button class="btn-restart">再来一局</button>
-      <button class="btn-menu">返回菜单</button>
+      <button class="btn-restart" onclick="resetGame()">再来一局</button>
+      <button class="btn-menu" onclick="backToMode()">返回菜单</button>
     </div>
   </div>
 </div>
 
 <script>
-const title = document.querySelector('.title');
-const startBtn = document.querySelector('.start-btn');
-const backBtn = document.querySelector('.back-btn');
-const modeBox = document.querySelector('.mode-box');
-const pvpBtn = document.querySelector('.pvp');
-const aiBtn = document.querySelector('.ai');
-const difBtns = document.querySelectorAll('.dif-btn');
-const statusText = document.querySelector('.status');
-const board = document.querySelector('.board');
-const endModal = document.querySelector('.end-modal');
-const resultText = document.querySelector('.result');
-const btnRestart = document.querySelector('.btn-restart');
-const btnMenu = document.querySelector('.btn-menu');
+const PAGE = {
+  MAIN: "main",
+  MODE: "mode",
+  DIFF: "diff",
+  GAME: "game"
+};
+let nowPage = PAGE.MAIN;
 
-const winPatterns = [
-  [0,1,2],[3,4,5],[6,7,8],
-  [0,3,6],[1,4,7],[2,5,8],
-  [0,4,8],[2,4,6]
-];
+// 难度动画锁
+let diffAnimLock = false;
+const DIFF_ANIM_ITEM_TIME = 150;
+const DIFF_BTN_COUNT = 5;
+const DIFF_ANIM_TOTAL_TIME = 750;
 
+// ===== 你要的：上一步 0.5秒冷却锁 =====
+let backCd = false;
+const BACK_CD_TIME = 500;
+
+const winPatterns = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 let cells = [];
-let current = '🔵';
+let nowChess = "🔵";
 let gameOver = false;
-let isAI = false;
-let history = [];
-let page = 'main';
-let fromMode = '';
+let aiMode = false;
+let aiLv = "beginner";
+let stepHistory = [];
+let hasPlayed = false;
 
-// 初始化棋盘
-for (let i=0; i<9; i++) {
-  const c = document.createElement('div');
-  c.classList.add('cell');
-  c.dataset.index = i;
-  c.addEventListener('click', clickCell);
-  board.appendChild(c);
-  cells.push(c);
-}
+const titleDom = document.querySelector(".title");
+const startBtn = document.querySelector(".start-btn");
+const backBtn = document.getElementById("backBtn");
+const modePage = document.getElementById("modePage");
+const diffPage = document.getElementById("diffPage");
+const statusText = document.getElementById("statusText");
+const boardWrap = document.getElementById("boardWrap");
+const modalWrap = document.getElementById("modalWrap");
+const resText = document.getElementById("resText");
 
-function clickCell(e) {
-  if (page !== 'gaming' || gameOver) return;
-  const cell = e.target;
-  const idx = +cell.dataset.index;
-  if (cell.textContent) return;
-
-  history.push({ index: idx, val: current });
-  cell.textContent = current;
-  current = current === '🔵' ? '🔴' : '🔵';
-  updateStatus();
-  checkGame();
-
-  if (!gameOver && isAI && current === '🔴') {
-    setTimeout(aiMove, 300);
+window.onload = () => {
+  for(let i = 0; i < 9; i++){
+    let d = document.createElement("div");
+    d.className = "cell";
+    d.onclick = () => cellClick(i);
+    boardWrap.appendChild(d);
+    cells.push(d);
   }
+};
+
+function cellClick(idx){
+  if(gameOver) return;
+  if(aiMode && nowChess === "🔴") return;
+  if(cells[idx].innerText) return;
+  hasPlayed = true;
+  stepHistory.push({idx:idx, val:nowChess});
+  cells[idx].innerText = nowChess;
+  checkWin();
+  switchTurn();
+  if(!gameOver && aiMode && nowChess === "🔴") setTimeout(aiGo,350);
 }
 
-function updateStatus() {
-  statusText.textContent = current === '🔵' ? '蓝方回合' : '红方回合';
+function switchTurn(){
+  nowChess = nowChess === "🔵" ? "🔴" : "🔵";
+  statusText.innerText = nowChess === "🔵" ? "蓝方回合" : "红方回合";
 }
 
-function aiMove() {
-  const empty = cells.filter(c => !c.textContent);
-  if (!empty.length || gameOver) return;
-  let best = findWin('🔴') || findWin('🔵') || (cells[4].textContent ? empty[0] : cells[4]);
-  history.push({ index: +best.dataset.index, val: '🔴' });
-  best.textContent = '🔴';
-  checkGame();
-  if (!gameOver) {
-    current = '🔵';
-    updateStatus();
-  }
+function undo(){
+  if(stepHistory.length <= 0) return;
+  let last = stepHistory.pop();
+  cells[last.idx].innerText = "";
+  nowChess = last.val;
+  statusText.innerText = nowChess === "🔵" ? "蓝方回合" : "红方回合";
+  gameOver = false;
+  modalWrap.classList.remove("show");
+  if(stepHistory.length === 0) hasPlayed = false;
 }
 
-function findWin(m) {
-  for (const p of winPatterns) {
-    const [a,b,c] = p;
-    if (cells[a].textContent===m && cells[b].textContent===m && !cells[c].textContent) return cells[c];
-    if (cells[a].textContent===m && cells[c].textContent===m && !cells[b].textContent) return cells[b];
-    if (cells[b].textContent===m && cells[c].textContent===m && !cells[a].textContent) return cells[a];
+function findTwo(chess){
+  for(let p of winPatterns){
+    let a=cells[p[0]],b=cells[p[1]],c=cells[p[2]];
+    let cnt = (a.innerText===chess)+(b.innerText===chess)+(c.innerText===chess);
+    let emp = null;
+    if(!a.innerText)emp=a;
+    if(!b.innerText)emp=b;
+    if(!c.innerText)emp=c;
+    if(cnt===2&&emp)return emp;
   }
   return null;
 }
+function getCorner(){
+  let arr=[0,2,6,8];
+  for(let i of arr)if(!cells[i].innerText)return cells[i];
+  return null;
+}
 
-function checkGame() {
-  const v = cells.map(x => x.textContent);
-  let win = null;
-  for (const p of winPatterns) {
-    const [a,b,c] = p;
-    if (v[a] && v[a]===v[b] && v[a]===v[c]) { win=v[a]; break; }
+function aiGo(){
+  let empty = cells.filter(x=>!x.innerText);
+  if(empty.length<=0||gameOver)return;
+  let tar=null;
+  switch(aiLv){
+    case "beginner":
+      tar=Math.random()<0.2?findTwo('🔴'):null;
+      if(!tar&&Math.random()<0.3)tar=findTwo('🔵');
+      tar=tar||(cells[4].innerText?empty[0]:cells[4]);break;
+    case "easy":
+      tar=findTwo('🔴');
+      if(!tar&&Math.random()<0.5)tar=findTwo('🔵');
+      tar=tar||(cells[4].innerText?empty[0]:cells[4]);break;
+    case "normal":
+      tar=findTwo('🔴')||findTwo('🔵')||cells[4]||empty[0];break;
+    case "hard":
+      tar=findTwo('🔴')||findTwo('🔵')||cells[4]||empty[0];break;
+    case "hell":
+      tar=findTwo('🔴')||findTwo('🔵')||cells[4]||getCorner()||empty[0];break;
   }
-  if (win) {
-    gameOver = true;
-    resultText.textContent = win + ' 胜利！';
-    endModal.classList.add('show');
+  let idx = cells.indexOf(tar);
+  stepHistory.push({idx:idx,val:'🔴'});
+  hasPlayed = true;
+  tar.innerText="🔴";
+  checkWin();
+  if(!gameOver)switchTurn();
+}
+
+function checkWin(){
+  let v = cells.map(x=>x.innerText);
+  let w=null;
+  for(let p of winPatterns){
+    if(v[p[0]]&&v[p[0]]===v[p[1]]&&v[p[0]]===v[p[2]]){w=v[p[0]];break;}
+  }
+  if(w){
+    gameOver=true;
+    resText.innerText=w+" 胜利！";
+    modalWrap.classList.add("show");
     return;
   }
-  if (!v.includes('')) {
-    gameOver = true;
-    resultText.textContent = '平局';
-    endModal.classList.add('show');
+  if(v.every(x=>x!="")){
+    gameOver=true;
+    resText.innerText="平局";
+    modalWrap.classList.add("show");
   }
 }
 
-function resetBoard() {
-  cells.forEach(c => c.textContent = '');
-  gameOver = false;
-  endModal.classList.remove('show');
-  current = '🔵';
-  history = [];
-  updateStatus();
+function clearGameData(){
+  cells.forEach(x=>x.innerText="");
+  gameOver=false;
+  stepHistory=[];
+  hasPlayed=false;
+  nowChess="🔵";
+  modalWrap.classList.remove("show");
+  statusText.innerText="蓝方回合";
 }
 
-// 开始游戏
-startBtn.onclick = () => {
-  page = 'mode';
-  title.classList.add('move-up');
-  startBtn.classList.add('move-down');
-  setTimeout(() => {
-    modeBox.classList.add('show');
-    backBtn.classList.add('show');
-  }, 400);
-};
+function enterMode(){
+  nowPage = PAGE.MODE;
+  titleDom.classList.add("move-up");
+  startBtn.classList.add("move-down");
+  setTimeout(()=>{
+    modePage.classList.add("show");
+    backBtn.classList.add("show");
+  },700);
+}
 
-// 上一步
-backBtn.onclick = () => {
-  if (page === 'mode') {
-    page = 'main';
-    modeBox.classList.remove('show');
-    backBtn.classList.remove('show');
-    title.classList.remove('move-up');
-    startBtn.classList.remove('move-down');
-  }
-  else if (page === 'aiDiff') {
-    page = 'mode';
-    difBtns.forEach(b => b.classList.remove('show'));
-    setTimeout(() => {
-      modeBox.classList.remove('hide');
-      modeBox.classList.add('show');
-    }, 100);
-  }
-  else if (page === 'gaming') {
-    if (history.length > 0) {
-      const last = history.pop();
-      cells[last.index].textContent = '';
-      current = last.val;
-      updateStatus();
-      gameOver = false;
-      endModal.classList.remove('show');
-    } else {
-      page = fromMode;
-      board.classList.remove('show');
-      statusText.classList.remove('show');
-      setTimeout(() => {
-        modeBox.classList.remove('hide');
-        modeBox.classList.add('show');
-      }, 100);
+function enterPVP(){
+  aiMode=false;
+  nowPage=PAGE.GAME;
+  modePage.classList.add("hide");
+  setTimeout(()=>{
+    clearGameData();
+    statusText.classList.add("show");
+    boardWrap.classList.add("show");
+  },350);
+}
+
+function enterAIDiff(){
+  nowPage=PAGE.DIFF;
+  modePage.classList.add("hide");
+  diffAnimLock = true;
+  backBtn.classList.add("lock");
+  setTimeout(()=>{
+    let list = diffPage.querySelectorAll(".dif-btn");
+    let t=0;
+    list.forEach(d=>{
+      setTimeout(()=>d.classList.add("show"),t);
+      t+=DIFF_ANIM_ITEM_TIME;
+    });
+    setTimeout(()=>{
+      diffAnimLock = false;
+      backBtn.classList.remove("lock");
+    }, DIFF_ANIM_TOTAL_TIME);
+  },300);
+}
+
+function enterAIGame(btn){
+  aiMode=true;
+  aiLv=btn.dataset.dif;
+  nowPage=PAGE.GAME;
+  diffPage.querySelectorAll(".dif-btn").forEach(d=>d.classList.remove("show"));
+  setTimeout(()=>{
+    clearGameData();
+    statusText.classList.add("show");
+    boardWrap.classList.add("show");
+  },300);
+}
+
+function backToMode(){
+  boardWrap.classList.remove("show");
+  statusText.classList.remove("show");
+  clearGameData();
+  nowPage=PAGE.MODE;
+  setTimeout(()=>{
+    modePage.classList.remove("hide");
+    modePage.classList.add("show");
+  },300);
+}
+
+function resetGame(){
+  clearGameData();
+}
+
+// 上一步点击事件 + 500ms冷却
+backBtn.onclick = function(){
+  // 冷却中 / 难度动画中 直接拦截
+  if(backCd || diffAnimLock) return;
+
+  // 开启冷却
+  backCd = true;
+  setTimeout(()=> backCd = false, BACK_CD_TIME);
+
+  if(nowPage === PAGE.GAME){
+    if(hasPlayed){
+      undo();
+    }else{
+      if(aiMode){
+        boardWrap.classList.remove("show");
+        statusText.classList.remove("show");
+        nowPage = PAGE.DIFF;
+        enterAIDiff();
+      }else{
+        backToMode();
+      }
     }
   }
-};
-
-// 真人对战
-pvpBtn.onclick = () => {
-  isAI = false;
-  fromMode = 'mode';
-  page = 'gaming';
-  modeBox.classList.remove('show');
-  modeBox.classList.add('hide');
-  setTimeout(() => {
-    resetBoard();
-    statusText.classList.add('show');
-    board.classList.add('show');
-  }, 200);
-};
-
-// AI 对战
-aiBtn.onclick = () => {
-  isAI = true;
-  page = 'aiDiff';
-  modeBox.classList.remove('show');
-  modeBox.classList.add('hide');
-  setTimeout(() => {
-    difBtns.forEach(btn => btn.classList.add('show'));
-  }, 200);
-};
-
-// 难度选择
-difBtns.forEach(btn => {
-  btn.onclick = () => {
-    fromMode = 'mode';
-    page = 'gaming';
-    difBtns.forEach(b => b.classList.remove('show'));
-    setTimeout(() => {
-      resetBoard();
-      statusText.classList.add('show');
-      board.classList.add('show');
-    }, 200);
-  };
-});
-
-btnRestart.onclick = resetBoard;
-
-btnMenu.onclick = () => {
-  endModal.classList.remove('show');
-  board.classList.remove('show');
-  statusText.classList.remove('show');
-  difBtns.forEach(b => b.classList.remove('show'));
-  resetBoard();
-  setTimeout(() => {
-    modeBox.classList.remove('hide');
-    modeBox.classList.add('show');
-    page = 'mode';
-  }, 100);
-};
+  else if(nowPage === PAGE.DIFF){
+    diffPage.querySelectorAll(".dif-btn").forEach(d=>d.classList.remove("show"));
+    nowPage = PAGE.MODE;
+    setTimeout(()=>{
+      modePage.classList.remove("hide");
+      modePage.classList.add("show");
+    },250);
+  }
+  else if(nowPage === PAGE.MODE){
+    modePage.classList.remove("show");
+    backBtn.classList.remove("show");
+    titleDom.classList.remove("move-up");
+    startBtn.classList.remove("move-down");
+    nowPage = PAGE.MAIN;
+  }
+}
 </script>
 </body>
 </html>
